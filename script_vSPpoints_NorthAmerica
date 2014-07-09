@@ -1,0 +1,250 @@
+rm(list=ls())
+
+library('raster')
+library('sdmvspecies')
+library('dismo')
+library('pbdb')
+
+library('sqldf')
+library('maps')
+library('tcltk')
+
+##loading the climate layers
+setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/climate/North_America')
+env.stack.0k <- stack("NorthAm_0k_bio5.grd", "NorthAm_0k_bio6.grd", "NorthAm_0k_bio12.grd"); names(env.stack.0k) <- c('bio5', 'bio6', 'bio12')
+env.stack.21k <- stack("NorthAm_21k_bio5.grd", "NorthAm_21k_bio6.grd", "NorthAm_21k_bio12.grd"); names(env.stack.21k) <- c('bio5', 'bio6', 'bio12')
+env.stack.rcp45 <- stack("NorthAm_rcp45_bio5.grd", "NorthAm_rcp45_bio6.grd", "NorthAm_rcp45_bio12.grd"); names(env.stack.rcp45) <- c('bio5', 'bio6', 'bio12')
+
+coords <- xyFromCell(env.stack.0k, 1:ncell(env.stack.0k))
+
+##creating virtual species
+grad.bio5 <- c(0, 10, 20, 30)
+grad.bio6 <- c(-40, -25, -10, 5)
+grad.bio12 <- c(300, 700, 1100, 1500)
+
+threshold <- c(0.2, 0.5) #spreading scenarios (high/low dispersal capability)
+tolerance <- list(c(20, 20, 500), c(30, 30, 700)) #tolerance specialist/generalist
+nFossilSample <- c(5, 10, 20)
+
+
+##files to save results from virtual species
+
+#will save the names of virtual species (indeed, the optimum and tolerance of species niche)
+names.Vspp <- data.frame(c('long', 'long', 'long'), c('lat', 'lat', 'lat'), row.names= c('row.thrshold', 'row.tolerance', 'row.optimum'))
+
+#will save the suitabilities of virtual species built from gaussian curves
+Vspp.0k <- data.frame(coords)
+Vspp.21k <- data.frame(coords)
+Vspp.rcp45 <- data.frame(coords)
+
+#will save absence/background points
+background.0k <- data.frame(id1=rep('col1', 50), id2=rep('col2', 50))
+background.overlap <- data.frame(id1=rep('col1', 50), id2=rep('col2', 50))
+
+#will save environmentally filtered points
+filteredPoints.0k <- data.frame(id1=rep('col1', 50), id2=rep('col2', 50))
+filteredPoints.overlap <- data.frame(id1=rep('col1', 50), id2=rep('col2', 50))
+filteredPoints.LGM5 <- data.frame(id1=rep('col1', 5), id2=rep('col2', 5))
+filteredPoints.LGM10 <- data.frame(id1=rep('col1', 10), id2=rep('col2', 10))
+filteredPoints.LGM20 <- data.frame(id1=rep('col1', 20), id2=rep('col2', 20))
+
+
+for(thrs in threshold){
+	for(tol in 1:length(tolerance)){
+		for(i in grad.bio5){
+			for(j in grad.bio6){
+				for(k in grad.bio12){
+					
+##creating virtual species
+					config.sp <- list(c("bio5", i, tolerance[[tol]][1]), c("bio6", j, tolerance[[tol]][2]), c("bio12", k, tolerance[[tol]][3]))
+					sp.0k <- artificialBellResponse(env.stack.0k, config.sp)
+					sp.21k <- artificialBellResponse(env.stack.21k, config.sp)
+					sp.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp)
+					
+	#saving true virtual species suitability in the matrices
+					idCol.Vspp <- ncol(Vspp.0k)+1
+					Vspp.0k[, idCol.Vspp] <- values(sp.0k)
+					Vspp.21k[, idCol.Vspp] <- values(sp.21k)
+					Vspp.rcp45[, idCol.Vspp] <- values(sp.rcp45)
+					names.Vspp['row.thrshold', idCol.Vspp] <- paste('thrs(', thrs, ')', sep= '')
+					names.Vspp['row.tolerance', idCol.Vspp] <- paste('tol(', toString(tolerance[[tol]]), ')', sep= '')
+					names.Vspp['row.optimum', idCol.Vspp] <- paste('sp(', paste(i, j, k, sep=' '), ')', sep='')
+					
+					
+##Selecting equidistant points through climatic space using envSample function
+
+#Current unbiased record - env0k (spp in equilibrium)
+					thrs0k <- sp.0k > thrs
+					pts.thrs0k <- which(values(thrs0k) == 1)
+					
+					if(length(pts.thrs0k) >= 50){
+						coords.thrs0k <- xyFromCell(sp.0k, pts.thrs0k)
+						env.thrs0k <- as.data.frame(extract(env.stack.0k, coords.thrs0k))
+						env.thrs0k <- data.frame(temp= apply(env.thrs0k[,1:2], 1, mean), prec = env.thrs0k[,3])
+						
+						r=0.5
+						res0k <- list((range(env.thrs0k$temp)[2] - range(env.thrs0k$temp)[1])/r, (range(env.thrs0k$prec)[2] - range(env.thrs0k$prec)[1])/r)
+						filtered.points0k <- envSample(coords.thrs0k, filters= list(env.thrs0k$temp, env.thrs0k$prec), res = res0k, do.plot=F)
+							
+						while(nrow(filtered.points0k) < 50){
+							r<- r+0.5
+							res0k <- list((range(env.thrs0k$temp)[2] - range(env.thrs0k$temp)[1])/r, (range(env.thrs0k$prec)[2] - range(env.thrs0k$prec)[1])/r)
+							filtered.points0k <- envSample(coords.thrs0k, filters= list(env.thrs0k$temp, env.thrs0k$prec), res = res0k, do.plot=F)
+						}#end while(nrow(filtered.points0k) < 50)
+						
+						if(nrow(filtered.points0k) > 50){
+							id.filter0k <- sample(1:nrow(filtered.points0k), 50)
+							filtered.points0k <- filtered.points0k[id.filter0k,]
+						}#end if(nrow(filtered.points0k) > 50)
+						
+						id.cell0k <- numeric()
+						for(l in 1:nrow(filtered.points0k)){
+							id.xyCell0k <- which(coords.thrs0k[,1] == filtered.points0k[l,1] & coords.thrs0k[,2] == filtered.points0k[l,2])
+							id.cell0k[l] <- pts.thrs0k[id.xyCell0k]
+						}#end for'l'
+						filteredPoints.0k[,idCol.Vspp] <- id.cell0k
+				
+					} else{filteredPoints.0k[,idCol.Vspp] <- NA} #end if(length(pts.thrs0k) >= 50)
+
+
+#absences (or background) 0k - spp in equilibrium
+					back.thrs0k <- which(values(thrs0k) == 0)
+					
+					if(length(back.thrs0k) >= 50) {
+						back0k <- sample(back.thrs0k, 50)
+						background.0k[, idCol.Vspp] <- back0k
+						} else{
+							background.0k[, idCol.Vspp] <- c(back.thrs0k, rep(NA, 50-length(back.thrs0k)))
+							}#end if(length(back.thrs0k) >= 50)
+
+
+
+
+
+#Current biased record - overlap (spp non-equilibrium)
+					overlap.thrs <- sp.0k > thrs & sp.21k > thrs
+					pts.thrs <- which(values(overlap.thrs) == 1)
+					
+					if(length(pts.thrs) >= 50){
+						coords.thrs <- xyFromCell(sp.0k, pts.thrs)
+						env.thrs <- as.data.frame(extract(env.stack.0k, coords.thrs))
+						env.thrs <- data.frame(temp= apply(env.thrs[,1:2], 1, mean), prec = env.thrs[,3])
+						
+						r=0.5
+						res <- list((range(env.thrs$temp)[2] - range(env.thrs$temp)[1])/r, (range(env.thrs$prec)[2] - range(env.thrs$prec)[1])/r)
+						filtered.points <- envSample(coords.thrs, filters= list(env.thrs$temp, env.thrs$prec), res = res, do.plot=F)
+							
+						while(nrow(filtered.points) < 50){
+							r<- r+0.5
+							res <- list((range(env.thrs$temp)[2] - range(env.thrs$temp)[1])/r, (range(env.thrs$prec)[2] - range(env.thrs$prec)[1])/r)
+							filtered.points <- envSample(coords.thrs, filters= list(env.thrs$temp, env.thrs$prec), res = res, do.plot=F)
+						}#end while(nrow(filtered.points) < 50)
+						
+						if(nrow(filtered.points) > 50){
+							id.filter <- sample(1:nrow(filtered.points), 50)
+							filtered.points <- filtered.points[id.filter,]
+						}#end if(nrow(filtered.points) > 50)
+						
+						id.cell <- numeric()
+						for(l in 1:nrow(filtered.points)){
+							id.xyCell <- which(coords.thrs[,1] == filtered.points[l,1] & coords.thrs[,2] == filtered.points[l,2])
+							id.cell[l] <- pts.thrs[id.xyCell]
+						}#end for'l'
+						filteredPoints.overlap[,idCol.Vspp] <- id.cell
+				
+					} else{filteredPoints.overlap[,idCol.Vspp] <- NA} #end if(length(pts.thrs) >= 50)
+		
+		
+
+#absences (or background) 0k - spp non-equilibrium
+					backThrs.overlap <- which(values(overlap.thrs) == 0)
+					
+					if(length(backThrs.overlap) >= 50) {
+						back.overlap <- sample(backThrs.overlap, 50)
+						background.overlap[, idCol.Vspp] <- back.overlap
+						} else{
+							background.overlap[, idCol.Vspp] <- c(back.overlap, rep(NA, 50-length(back.thrs0k)))
+					}#end if(length(back.thrs0k) >= 50)
+
+
+	
+					
+#Fossil record - 21k
+					LGM.thrs <- sp.21k > thrs
+					pts.LGMthrs <- which(values(LGM.thrs) == 1)
+						
+					if(length(pts.LGMthrs) >= 50){
+						for(n in nFossilSample){
+							coords.LGMthrs <- xyFromCell(sp.21k, pts.LGMthrs)
+							env.LGMthrs <- as.data.frame(extract(env.stack.21k, coords.LGMthrs))
+							env.LGMthrs <- data.frame(temp= apply(env.LGMthrs[,1:2], 1, mean), prec = env.LGMthrs[,3])
+						
+							r=0.5
+							res.LGM <- list((range(env.LGMthrs$temp)[2] - range(env.LGMthrs$temp)[1])/r, (range(env.LGMthrs$prec)[2] - range(env.LGMthrs$prec)[1])/r)
+							filtered.LGMpoints <- envSample(coords.LGMthrs, filters= list(env.LGMthrs$temp, env.LGMthrs$prec), res = res.LGM, do.plot=F)
+							
+							while(nrow(filtered.LGMpoints) < n){
+								r<- r+0.5
+								res.LGM <- list((range(env.LGMthrs$temp)[2] - range(env.LGMthrs$temp)[1])/r, (range(env.LGMthrs$prec)[2] - range(env.LGMthrs$prec)[1])/r)
+								filtered.LGMpoints <- envSample(coords.LGMthrs, filters= list(env.LGMthrs$temp, env.LGMthrs$prec), res = res.LGM, do.plot=F)
+							}#end while(nrow(filtered.LGMpoints) < n)
+						
+							if(nrow(filtered.LGMpoints) > n){
+								id.LGMfilter <- sample(1:nrow(filtered.LGMpoints), n)
+								filtered.LGMpoints <- filtered.LGMpoints[id.LGMfilter,]
+							}#end if(nrow(filtered.points) > n)
+						
+							id.LGMcell <- numeric()
+							for(l in 1:nrow(filtered.LGMpoints)){
+								id.LGMxyCell <- which(coords.LGMthrs[,1] == filtered.LGMpoints[l,1] & coords.LGMthrs[,2] == filtered.LGMpoints[l,2])
+								id.LGMcell[l] <- pts.LGMthrs[id.LGMxyCell]
+							}#end for'l'
+							
+							
+							if(n == 5){filteredPoints.LGM5[,idCol.Vspp] <- id.LGMcell}
+							if(n == 10){filteredPoints.LGM10[,idCol.Vspp] <- id.LGMcell}
+							if(n == 20){filteredPoints.LGM20[,idCol.Vspp] <- id.LGMcell}
+							
+						}#end for'n'
+					} else{filteredPoints.LGM5[,idCol.Vspp] <- NA
+						   filteredPoints.LGM10[,idCol.Vspp] <- NA
+						   filteredPoints.LGM20[,idCol.Vspp] <- NA} #end if(length(pts.thrs) >= 50)
+			
+				}#end for'k'
+			}#end for'j'
+		}#end for'i'
+	}#end for'tol'
+}#end for'thrs'
+
+
+
+setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/virtualSPP/North_America')
+write.table(names.Vspp, 'speciesNames.txt', sep="	")
+
+write.table(Vspp.0k, 'Suit_Vspp0k.txt', row.names=F, sep="	")
+write.table(Vspp.21k, 'Suit_Vspp21k.txt', row.names=F, sep="	")
+write.table(Vspp.rcp45, 'Suit_Vspprcp45.txt', row.names=F, sep="	")
+
+write.table(background.0k, 'background_0k.txt', row.names=F, sep="	")
+write.table(background.overlap, 'background_overlap.txt', row.names=F, sep="	")
+
+write.table(filteredPoints.0k, 'filteredPoints_0k.txt', row.names=F, sep="	")
+write.table(filteredPoints.overlap, 'filteredPoints_overlap.txt', row.names=F, sep="	")
+write.table(filteredPoints.LGM5, 'filteredPoints_LGM5.txt', row.names=F, sep="	")
+write.table(filteredPoints.LGM10, 'filteredPoints_LGM10.txt', row.names=F, sep="	")
+write.table(filteredPoints.LGM20, 'filteredPoints_LGM20.txt', row.names=F, sep="	")
+
+
+
+############################
+############
+#garbage (don't consider)
+
+tolerance <- list(c(20, 20, 500), c(30, 30, 700))
+tol = 1
+i = 10
+j = -10
+k = 700
+thrs = 0.2
+
+
