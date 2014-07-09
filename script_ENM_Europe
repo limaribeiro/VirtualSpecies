@@ -1,0 +1,596 @@
+
+rm(list=ls())
+
+library('raster')
+library('dismo')
+#library('adehabitatHS')
+
+#climatic layers
+setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/climate/Europe')
+env.stack.0k <- stack("Europe_0k_bio5.grd", "Europe_0k_bio6.grd", "Europe_0k_bio12.grd"); names(env.stack.0k) <- c('bio5', 'bio6', 'bio12')
+env.stack.21k <- stack("Europe_21k_bio5.grd", "Europe_21k_bio6.grd", "Europe_21k_bio12.grd"); names(env.stack.21k) <- c('bio5', 'bio6', 'bio12')
+env.stack.rcp45 <- stack("Europe_rcp45_bio5.grd", "Europe_rcp45_bio6.grd", "Europe_rcp45_bio12.grd"); names(env.stack.rcp45) <- c('bio5', 'bio6', 'bio12')
+
+coords <- xyFromCell(env.stack.0k, 1:ncell(env.stack.0k))
+
+
+#species presences, absences and fossil records
+setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/virtualSPP/Europe')
+back0k <- read.table('background_0k.txt', h=T)
+back.overlap <- read.table('background_overlap.txt', h=T)
+
+pres0k <- read.table('filteredPoints_0k.txt', h=T)
+pres.overlap <- read.table('filteredPoints_overlap.txt', h=T)
+pres.LGM5 <- read.table('filteredPoints_LGM5.txt', h=T)
+pres.LGM10 <- read.table('filteredPoints_LGM10.txt', h=T)
+pres.LGM20 <- read.table('filteredPoints_LGM20.txt', h=T)
+
+Vspnames <- read.table('speciesNames.txt', h=T)
+
+ncol(back0k); ncol(back.overlap); ncol(pres0k); ncol(pres.overlap); ncol(pres.LGM5); ncol(pres.LGM10); ncol(pres.LGM20); ncol(Vspnames)
+
+
+
+
+##files to save suitabilityes from ENMs
+#Bioclim
+PRESsuit.Bioclim0k <- data.frame(coords)
+PRESsuit.Bioclim0k.LGM5 <- data.frame(coords)
+PRESsuit.Bioclim0k.LGM10 <- data.frame(coords)
+PRESsuit.Bioclim0k.LGM20 <- data.frame(coords)
+PRESsuit.Bioclim.overlap <- data.frame(coords)
+PRESsuit.Bioclim.overlapLGM5 <- data.frame(coords)
+PRESsuit.Bioclim.overlapLGM10 <- data.frame(coords)
+PRESsuit.Bioclim.overlapLGM20 <- data.frame(coords)
+
+LGMsuit.Bioclim0k <- data.frame(coords)
+LGMsuit.Bioclim0k.LGM5 <- data.frame(coords)
+LGMsuit.Bioclim0k.LGM10 <- data.frame(coords)
+LGMsuit.Bioclim0k.LGM20 <- data.frame(coords)
+LGMsuit.Bioclim.overlap <- data.frame(coords)
+LGMsuit.Bioclim.overlapLGM5 <- data.frame(coords)
+LGMsuit.Bioclim.overlapLGM10 <- data.frame(coords)
+LGMsuit.Bioclim.overlapLGM20 <- data.frame(coords)
+
+FUTsuit.Bioclim0k <- data.frame(coords)
+FUTsuit.Bioclim0k.LGM5 <- data.frame(coords)
+FUTsuit.Bioclim0k.LGM10 <- data.frame(coords)
+FUTsuit.Bioclim0k.LGM20 <- data.frame(coords)
+FUTsuit.Bioclim.overlap <- data.frame(coords)
+FUTsuit.Bioclim.overlapLGM5 <- data.frame(coords)
+FUTsuit.Bioclim.overlapLGM10 <- data.frame(coords)
+FUTsuit.Bioclim.overlapLGM20 <- data.frame(coords)
+
+
+#Gower
+PRESsuit.Gower0k <- data.frame(coords)
+PRESsuit.Gower0k.LGM5 <- data.frame(coords)
+PRESsuit.Gower0k.LGM10 <- data.frame(coords)
+PRESsuit.Gower0k.LGM20 <- data.frame(coords)
+PRESsuit.Gower.overlap <- data.frame(coords)
+PRESsuit.Gower.overlapLGM5 <- data.frame(coords)
+PRESsuit.Gower.overlapLGM10 <- data.frame(coords)
+PRESsuit.Gower.overlapLGM20 <- data.frame(coords)
+
+LGMsuit.Gower0k <- data.frame(coords)
+LGMsuit.Gower0k.LGM5 <- data.frame(coords)
+LGMsuit.Gower0k.LGM10 <- data.frame(coords)
+LGMsuit.Gower0k.LGM20 <- data.frame(coords)
+LGMsuit.Gower.overlap <- data.frame(coords)
+LGMsuit.Gower.overlapLGM5 <- data.frame(coords)
+LGMsuit.Gower.overlapLGM10 <- data.frame(coords)
+LGMsuit.Gower.overlapLGM20 <- data.frame(coords)
+
+FUTsuit.Gower0k <- data.frame(coords)
+FUTsuit.Gower0k.LGM5 <- data.frame(coords)
+FUTsuit.Gower0k.LGM10 <- data.frame(coords)
+FUTsuit.Gower0k.LGM20 <- data.frame(coords)
+FUTsuit.Gower.overlap <- data.frame(coords)
+FUTsuit.Gower.overlapLGM5 <- data.frame(coords)
+FUTsuit.Gower.overlapLGM10 <- data.frame(coords)
+FUTsuit.Gower.overlapLGM20 <- data.frame(coords)
+
+
+#Maha
+PRESsuit.Maha0k <- data.frame(coords)
+PRESsuit.Maha0k.LGM5 <- data.frame(coords)
+PRESsuit.Maha0k.LGM10 <- data.frame(coords)
+PRESsuit.Maha0k.LGM20 <- data.frame(coords)
+PRESsuit.Maha.overlap <- data.frame(coords)
+PRESsuit.Maha.overlapLGM5 <- data.frame(coords)
+PRESsuit.Maha.overlapLGM10 <- data.frame(coords)
+PRESsuit.Maha.overlapLGM20 <- data.frame(coords)
+
+LGMsuit.Maha0k <- data.frame(coords)
+LGMsuit.Maha0k.LGM5 <- data.frame(coords)
+LGMsuit.Maha0k.LGM10 <- data.frame(coords)
+LGMsuit.Maha0k.LGM20 <- data.frame(coords)
+LGMsuit.Maha.overlap <- data.frame(coords)
+LGMsuit.Maha.overlapLGM5 <- data.frame(coords)
+LGMsuit.Maha.overlapLGM10 <- data.frame(coords)
+LGMsuit.Maha.overlapLGM20 <- data.frame(coords)
+
+FUTsuit.Maha0k <- data.frame(coords)
+FUTsuit.Maha0k.LGM5 <- data.frame(coords)
+FUTsuit.Maha0k.LGM10 <- data.frame(coords)
+FUTsuit.Maha0k.LGM20 <- data.frame(coords)
+FUTsuit.Maha.overlap <- data.frame(coords)
+FUTsuit.Maha.overlapLGM5 <- data.frame(coords)
+FUTsuit.Maha.overlapLGM10 <- data.frame(coords)
+FUTsuit.Maha.overlapLGM20 <- data.frame(coords)
+
+
+
+
+#files to save statistics of model evaluation
+eval.colNames <- c('thrs', 'AUC', 'TSS', 'TPR', 'TNR', 'confusionMatrix_a', 'confusionMatrix_b', 'confusionMatrix_c', 'confusionMatrix_d')
+
+#Bioclim
+eval.Bioclim0k <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim0k.LGM5 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim0k.LGM10 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim0k.LGM20 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim.overlap <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim.overlapLGM5 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim.overlapLGM10 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Bioclim.overlapLGM20 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+
+#Gower
+eval.Gower0k <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower0k.LGM5 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower0k.LGM10 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower0k.LGM20 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower.overlap <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower.overlapLGM5 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower.overlapLGM10 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Gower.overlapLGM20 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+
+
+
+#Maha
+eval.Maha0k <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha0k.LGM5 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha0k.LGM10 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha0k.LGM20 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha.overlap <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha.overlapLGM5 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha.overlapLGM10 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+eval.Maha.overlapLGM20 <- data.frame(col1= eval.colNames, col2= eval.colNames)
+
+
+
+
+
+##starting modelling
+
+
+for(i in 3:ncol(pres.overlap)){
+
+#selecting presence, absence and fossil records for virtual species
+	Cells.back0k <- back0k[,i]
+	if(length(na.omit(Cells.back0k)) == 0){Cells.back0k <- sample(as.matrix(back0k[,-c(1:2)]), 20)}
+	
+	Cells.back.overlap <- back.overlap[,i]
+	if(length(na.omit(Cells.back.overlap)) == 0){Cells.back.overlap <- sample(back.overlap[,-1:2], 20)}
+	
+	VspCells0k <- pres0k[,i]
+	VspCells.overlap <- pres.overlap[,i]
+	VspCells.LGM5 <- pres.LGM5[,i]
+	VspCells.LGM10 <- pres.LGM10[,i]
+	VspCells.LGM20 <- pres.LGM20[,i]
+
+
+
+	if(length(na.omit(VspCells0k)) == 0 | length(na.omit(VspCells.overlap)) == 0){  
+		
+		
+		#colocar NAs em todos os objetos$resultados para a sp sem dados de presença
+
+
+#Bioclim
+	#Suitabilities Bioclim
+		#current scenario
+		PRESsuit.Bioclim0k[,i] <- NA; PRESsuit.Bioclim0k.LGM5[,i] <- NA; PRESsuit.Bioclim0k.LGM10[,i] <- NA; PRESsuit.Bioclim0k.LGM20[,i] <- NA 
+		PRESsuit.Bioclim.overlap[,i] <- NA; PRESsuit.Bioclim.overlapLGM5[,i] <- NA; PRESsuit.Bioclim.overlapLGM10[,i] <- NA; PRESsuit.Bioclim.overlapLGM20[,i] <- NA
+		#LGM scenario
+		LGMsuit.Bioclim0k[,i] <- NA; LGMsuit.Bioclim0k.LGM5[,i] <- NA; LGMsuit.Bioclim0k.LGM10[,i] <- NA; LGMsuit.Bioclim0k.LGM20[,i] <- NA
+		LGMsuit.Bioclim.overlap[,i] <- NA; LGMsuit.Bioclim.overlapLGM5[,i] <- NA; LGMsuit.Bioclim.overlapLGM10[,i] <- NA; LGMsuit.Bioclim.overlapLGM20[,i] <- NA
+		#Future scenario
+		FUTsuit.Bioclim0k[,i] <- NA; FUTsuit.Bioclim0k.LGM5[,i] <- NA; FUTsuit.Bioclim0k.LGM10[,i] <- NA; FUTsuit.Bioclim0k.LGM20[,i] <- NA
+		FUTsuit.Bioclim.overlap[,i] <- NA; FUTsuit.Bioclim.overlapLGM5[,i] <- NA; FUTsuit.Bioclim.overlapLGM10[,i] <- NA; FUTsuit.Bioclim.overlapLGM20[,i] <- NA	
+	#evaluation Bioclim
+		eval.Bioclim0k[,i] <- NA; eval.Bioclim0k.LGM5[,i] <- NA; eval.Bioclim0k.LGM10[,i] <- NA; eval.Bioclim0k.LGM20[,i] <- NA
+		eval.Bioclim.overlap[,i] <- NA; eval.Bioclim.overlapLGM5[,i] <- NA; eval.Bioclim.overlapLGM10[,i] <- NA; eval.Bioclim.overlapLGM20[,i] <- NA		
+		
+
+
+#Gower
+	#Suitabilities Gower
+		#current scenario
+		PRESsuit.Gower0k[,i] <- NA; PRESsuit.Gower0k.LGM5[,i] <- NA; PRESsuit.Gower0k.LGM10[,i] <- NA; PRESsuit.Gower0k.LGM20[,i] <- NA 
+		PRESsuit.Gower.overlap[,i] <- NA; PRESsuit.Gower.overlapLGM5[,i] <- NA; PRESsuit.Gower.overlapLGM10[,i] <- NA; PRESsuit.Gower.overlapLGM20[,i] <- NA
+		#LGM scenario
+		LGMsuit.Gower0k[,i] <- NA; LGMsuit.Gower0k.LGM5[,i] <- NA; LGMsuit.Gower0k.LGM10[,i] <- NA; LGMsuit.Gower0k.LGM20[,i] <- NA
+		LGMsuit.Gower.overlap[,i] <- NA; LGMsuit.Gower.overlapLGM5[,i] <- NA; LGMsuit.Gower.overlapLGM10[,i] <- NA; LGMsuit.Gower.overlapLGM20[,i] <- NA
+		#Future scenario
+		FUTsuit.Gower0k[,i] <- NA; FUTsuit.Gower0k.LGM5[,i] <- NA; FUTsuit.Gower0k.LGM10[,i] <- NA; FUTsuit.Gower0k.LGM20[,i] <- NA
+		FUTsuit.Gower.overlap[,i] <- NA; FUTsuit.Gower.overlapLGM5[,i] <- NA; FUTsuit.Gower.overlapLGM10[,i] <- NA; FUTsuit.Gower.overlapLGM20[,i] <- NA	
+	#evaluation Gower
+		eval.Gower0k[,i] <- NA; eval.Gower0k.LGM5[,i] <- NA; eval.Gower0k.LGM10[,i] <- NA; eval.Gower0k.LGM20[,i] <- NA
+		eval.Gower.overlap[,i] <- NA; eval.Gower.overlapLGM5[,i] <- NA; eval.Gower.overlapLGM10[,i] <- NA; eval.Gower.overlapLGM20[,i] <- NA
+	
+	
+	
+
+#Maha
+	#Suitabilities Maha
+		#current scenario
+		PRESsuit.Maha0k[,i] <- NA; PRESsuit.Maha0k.LGM5[,i] <- NA; PRESsuit.Maha0k.LGM10[,i] <- NA; PRESsuit.Maha0k.LGM20[,i] <- NA 
+		PRESsuit.Maha.overlap[,i] <- NA; PRESsuit.Maha.overlapLGM5[,i] <- NA; PRESsuit.Maha.overlapLGM10[,i] <- NA; PRESsuit.Maha.overlapLGM20[,i] <- NA
+		#LGM scenario
+		LGMsuit.Maha0k[,i] <- NA; LGMsuit.Maha0k.LGM5[,i] <- NA; LGMsuit.Maha0k.LGM10[,i] <- NA; LGMsuit.Maha0k.LGM20[,i] <- NA
+		LGMsuit.Maha.overlap[,i] <- NA; LGMsuit.Maha.overlapLGM5[,i] <- NA; LGMsuit.Maha.overlapLGM10[,i] <- NA; LGMsuit.Maha.overlapLGM20[,i] <- NA
+		#Future scenario
+		FUTsuit.Maha0k[,i] <- NA; FUTsuit.Maha0k.LGM5[,i] <- NA; FUTsuit.Maha0k.LGM10[,i] <- NA; FUTsuit.Maha0k.LGM20[,i] <- NA
+		FUTsuit.Maha.overlap[,i] <- NA; FUTsuit.Maha.overlapLGM5[,i] <- NA; FUTsuit.Maha.overlapLGM10[,i] <- NA; FUTsuit.Maha.overlapLGM20[,i] <- NA	
+	#evaluation Maha
+		eval.Maha0k[,i] <- NA; eval.Maha0k.LGM5[,i] <- NA; eval.Maha0k.LGM10[,i] <- NA; eval.Maha0k.LGM20[,i] <- NA
+		eval.Maha.overlap[,i] <- NA; eval.Maha.overlapLGM5[,i] <- NA; eval.Maha.overlapLGM10[,i] <- NA; eval.Maha.overlapLGM20[,i] <- NA		
+		
+
+
+		
+		
+		setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/virtualSPP/Europe/environmental_space')
+		pdf(paste(Vspnames[1,i], Vspnames[2,i], Vspnames[3,i], '.pdf', sep='_'))	
+		plot(1:10, 1:10, type= 'n')
+		legend(x= 5, y= 7, legend= c('No species'), text.col= 'red')
+		dev.off()
+		
+		next #next for'i' (next sp)
+	}#end if(length(na.omit(VspCells0k)) != 0 & length(na.omit(VspCells.overlap)) != 0)
+	
+	
+	
+	
+#extracting climatic data for presences and absences of virtual species	
+		env.back0k <- na.omit(extract(env.stack.0k, Cells.back0k))
+		env.back.overlap <- na.omit(extract(env.stack.0k, Cells.back.overlap))
+	
+		envVsp0k <- extract(env.stack.0k, VspCells0k)
+		envVsp.overlap <- extract(env.stack.0k, VspCells.overlap)
+		envVsp.LGM5 <- extract(env.stack.21k, VspCells.LGM5)
+		envVsp.LGM10 <- extract(env.stack.21k, VspCells.LGM10)
+		envVsp.LGM20 <- extract(env.stack.21k, VspCells.LGM20)
+
+
+#ploting Vsp on environmental space
+		VspToPlot <- data.frame(
+			categ= c(rep('env.back0k', nrow(env.back0k)), 
+			rep('env.back.overlap', nrow(env.back.overlap)),
+			rep('envVsp0k', nrow(envVsp0k)),
+			rep('envVsp.overlap', nrow(envVsp.overlap)),
+			rep('envVsp.LGM5', nrow(envVsp.LGM5)),
+			rep('envVsp.LGM10', nrow(envVsp.LGM10)),
+			rep('envVsp.LGM20', nrow(envVsp.LGM20))),
+			temp= apply(rbind(env.back0k, env.back.overlap, envVsp0k, envVsp.overlap, envVsp.LGM5, envVsp.LGM10, envVsp.LGM20)[,1:2], 1, 'mean'), 
+			prec= rbind(env.back0k, env.back.overlap, envVsp0k, envVsp.overlap, envVsp.LGM5, envVsp.LGM10, envVsp.LGM20)[,3])
+	
+		rangeVsp <- list(range(VspToPlot[,2], na.rm=T), range(VspToPlot[,3], na.rm=T))
+
+		setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/virtualSPP/Europe/environmental_space')
+		pdf(paste(Vspnames[1,i], Vspnames[2,i], Vspnames[3,i], '.pdf', sep='_'))	
+		plot(VspToPlot[, c('temp', 'prec')], type= 'n', xlim= rangeVsp[[1]], ylim= rangeVsp[[2]])
+		points(VspToPlot[which(VspToPlot[,1] == 'env.back0k'), c('temp', 'prec')], pch='b')
+		points(VspToPlot[which(VspToPlot[,1] == 'envVsp0k'), c('temp', 'prec')], pch='p', col= 'grey50')
+		points(VspToPlot[which(VspToPlot[,1] == 'env.back.overlap'), c('temp', 'prec')], pch='b', col='yellow3')
+		points(VspToPlot[which(VspToPlot[,1] == 'envVsp.overlap'), c('temp', 'prec')], pch='p', col='yellowgreen')
+		points(VspToPlot[which(VspToPlot[,1] == 'envVsp.LGM5'), c('temp', 'prec')], pch='f', col='blue')
+		points(VspToPlot[which(VspToPlot[,1] == 'envVsp.LGM10'), c('temp', 'prec')]+0.3, pch='f', col='magenta')
+		points(VspToPlot[which(VspToPlot[,1] == 'envVsp.LGM20'), c('temp', 'prec')]-0.3, pch='f', col='purple')
+		legend(x= rangeVsp[[1]][1], y= rangeVsp[[2]][2], legend= c('back_0k', 'pres_0k', 'back_ovlp', 'pres_ovlp','fossil_5','fossil_10','fossil_20'), text.col= c('black','grey50', 'yellow3', 'yellowgreen', 'blue', 'magenta', 'purple'), cex= 0.5)
+		dev.off()
+
+
+
+
+##building ENMs
+#data		
+		samp0k <- sample(length(VspCells0k), round(0.75 * length(VspCells0k)))
+		samp.back0k <- sample(length(Cells.back0k), round(0.75 * length(Cells.back0k)))
+		test0k <- na.omit(prepareData(x= env.stack.0k, p= VspCells0k[-samp0k], b= Cells.back0k[-samp.back0k]))
+		train0k <- na.omit(prepareData(x= env.stack.0k, p= VspCells0k[samp0k], b= Cells.back0k[samp.back0k]))
+		train0k.LGM5 <- na.omit(rbind(train0k, prepareData(x= env.stack.21k, p= VspCells.LGM5, b= NA)))
+		train0k.LGM10 <- na.omit(rbind(train0k, prepareData(x= env.stack.21k, p= VspCells.LGM10, b= NA)))
+		train0k.LGM20 <- na.omit(rbind(train0k, prepareData(x= env.stack.21k, p= VspCells.LGM20, b= NA)))
+
+		samp.overlap <- sample(length(VspCells.overlap), round(0.75 * length(VspCells.overlap)))
+		samp.back.overlap <- sample(length(Cells.back.overlap), round(0.75 * length(Cells.back.overlap)))
+		test.overlap <- na.omit(prepareData(x= env.stack.0k, p= VspCells.overlap[-samp.overlap], b= Cells.back.overlap[-samp.back.overlap]))
+		train.overlap <- na.omit(prepareData(x= env.stack.0k, p= VspCells.overlap[samp.overlap], b= Cells.back.overlap[samp.back.overlap]))
+		train.overlapLGM5 <- na.omit(rbind(train.overlap, prepareData(x= env.stack.21k, p= VspCells.LGM5, b= NA)))
+		train.overlapLGM10 <- na.omit(rbind(train.overlap, prepareData(x= env.stack.21k, p= VspCells.LGM10, b= NA)))
+		train.overlapLGM20 <- na.omit(rbind(train.overlap, prepareData(x= env.stack.21k, p= VspCells.LGM20, b= NA)))
+
+
+
+
+
+
+
+##Bioclim	
+	#fitting models - Bioclim 
+		Bioclim0k <- bioclim(train0k[which(train0k[,1]==1), -1])
+		Bioclim0k.LGM5 <- bioclim(train0k.LGM5[which(train0k.LGM5[,1]==1), -1])
+		Bioclim0k.LGM10 <- bioclim(train0k.LGM10[which(train0k.LGM10[,1]==1), -1])
+		Bioclim0k.LGM20 <- bioclim(train0k.LGM20[which(train0k.LGM20[,1]==1), -1])
+
+		Bioclim.overlap <- bioclim(train.overlap[which(train.overlap[,1]==1), -1])
+		Bioclim.overlapLGM5 <- bioclim(train.overlapLGM5[which(train.overlapLGM5[,1]==1), -1])
+		Bioclim.overlapLGM10 <- bioclim(train.overlapLGM10[which(train.overlapLGM10[,1]==1), -1])
+		Bioclim.overlapLGM20 <- bioclim(train.overlapLGM20[which(train.overlapLGM20[,1]==1), -1])
+
+
+		#saving suitabilities - Bioclim 
+			#current scenario
+			PRESsuit.Bioclim0k[,i] <- values(predict(env.stack.0k, Bioclim0k))
+			PRESsuit.Bioclim0k.LGM5[,i] <- values(predict(env.stack.0k, Bioclim0k.LGM5))
+			PRESsuit.Bioclim0k.LGM10[,i] <- values(predict(env.stack.0k, Bioclim0k.LGM10))
+			PRESsuit.Bioclim0k.LGM20[,i] <- values(predict(env.stack.0k, Bioclim0k.LGM20))
+
+			PRESsuit.Bioclim.overlap[,i] <- values(predict(env.stack.0k, Bioclim.overlap))
+			PRESsuit.Bioclim.overlapLGM5[,i] <- values(predict(env.stack.0k, Bioclim.overlapLGM5))
+			PRESsuit.Bioclim.overlapLGM10[,i] <- values(predict(env.stack.0k, Bioclim.overlapLGM10))
+			PRESsuit.Bioclim.overlapLGM20[,i] <- values(predict(env.stack.0k, Bioclim.overlapLGM20))		
+
+			#LGM scenario
+			LGMsuit.Bioclim0k[,i] <- values(predict(env.stack.21k, Bioclim0k))
+			LGMsuit.Bioclim0k.LGM5[,i] <- values(predict(env.stack.21k, Bioclim0k.LGM5))
+			LGMsuit.Bioclim0k.LGM10[,i] <- values(predict(env.stack.21k, Bioclim0k.LGM10))
+			LGMsuit.Bioclim0k.LGM20[,i] <- values(predict(env.stack.21k, Bioclim0k.LGM20))
+
+			LGMsuit.Bioclim.overlap[,i] <- values(predict(env.stack.21k, Bioclim.overlap))
+			LGMsuit.Bioclim.overlapLGM5[,i] <- values(predict(env.stack.21k, Bioclim.overlapLGM5))
+			LGMsuit.Bioclim.overlapLGM10[,i] <- values(predict(env.stack.21k, Bioclim.overlapLGM10))
+			LGMsuit.Bioclim.overlapLGM20[,i] <- values(predict(env.stack.21k, Bioclim.overlapLGM20))
+
+			#Future scenario
+			FUTsuit.Bioclim0k[,i] <- values(predict(env.stack.rcp45, Bioclim0k))
+			FUTsuit.Bioclim0k.LGM5[,i] <- values(predict(env.stack.rcp45, Bioclim0k.LGM5))
+			FUTsuit.Bioclim0k.LGM10[,i] <- values(predict(env.stack.rcp45, Bioclim0k.LGM10))
+			FUTsuit.Bioclim0k.LGM20[,i] <- values(predict(env.stack.rcp45, Bioclim0k.LGM20))
+
+			FUTsuit.Bioclim.overlap[,i] <- values(predict(env.stack.rcp45, Bioclim.overlap))
+			FUTsuit.Bioclim.overlapLGM5[,i] <- values(predict(env.stack.rcp45, Bioclim.overlapLGM5))
+			FUTsuit.Bioclim.overlapLGM10[,i] <- values(predict(env.stack.rcp45, Bioclim.overlapLGM10))
+			FUTsuit.Bioclim.overlapLGM20[,i] <- values(predict(env.stack.rcp45, Bioclim.overlapLGM20))
+				
+		
+	#evaluating models - Bioclim 	
+		eBioclim0k <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Bioclim0k)
+		eBioclim0k.LGM5 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Bioclim0k.LGM5)
+		eBioclim0k.LGM10 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Bioclim0k.LGM10)
+		eBioclim0k.LGM20 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Bioclim0k.LGM20)
+
+		eBioclim.overlap <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Bioclim.overlap)
+		eBioclim.overlapLGM5 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Bioclim.overlapLGM5)
+		eBioclim.overlapLGM10 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Bioclim.overlapLGM10)
+		eBioclim.overlapLGM20 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Bioclim.overlapLGM20)
+		
+		#saving statistics of evaluation - Bioclim 
+			#finding IDs for "threshold= max(Spec+Sens)"
+			idBioclim0k <- which(eBioclim0k@t == as.numeric(threshold(eBioclim0k, 'spec_sens')))
+			idBioclim0k.LGM5 <- which(eBioclim0k.LGM5@t == as.numeric(threshold(eBioclim0k.LGM5, 'spec_sens')))
+			idBioclim0k.LGM10 <- which(eBioclim0k.LGM10@t == as.numeric(threshold(eBioclim0k.LGM10, 'spec_sens')))
+			idBioclim0k.LGM20 <- which(eBioclim0k.LGM20@t == as.numeric(threshold(eBioclim0k.LGM20, 'spec_sens')))
+
+			idBioclim.overlap <- which(eBioclim.overlap@t == as.numeric(threshold(eBioclim.overlap, 'spec_sens')))
+			idBioclim.overlapLGM5 <- which(eBioclim.overlapLGM5@t == as.numeric(threshold(eBioclim.overlapLGM5, 'spec_sens')))
+			idBioclim.overlapLGM10 <- which(eBioclim.overlapLGM10@t == as.numeric(threshold(eBioclim.overlapLGM10, 'spec_sens')))
+			idBioclim.overlapLGM20 <- which(eBioclim.overlapLGM20@t == as.numeric(threshold(eBioclim.overlapLGM20, 'spec_sens')))
+			
+			
+			#saving on files 'eval.' - Bioclim 
+			eval.Bioclim0k[,i] <- c(eBioclim0k@t[idBioclim0k], eBioclim0k@auc, (eBioclim0k@TPR[idBioclim0k]+eBioclim0k@TNR[idBioclim0k]-1), eBioclim0k@TPR[idBioclim0k], eBioclim0k@TNR[idBioclim0k], eBioclim0k@confusion[idBioclim0k, ])
+			eval.Bioclim0k.LGM5[,i] <- c(eBioclim0k.LGM5@t[idBioclim0k.LGM5], eBioclim0k.LGM5@auc, (eBioclim0k.LGM5@TPR[idBioclim0k.LGM5]+eBioclim0k.LGM5@TNR[idBioclim0k.LGM5]-1), eBioclim0k.LGM5@TPR[idBioclim0k.LGM5], eBioclim0k.LGM5@TNR[idBioclim0k.LGM5], eBioclim0k.LGM5@confusion[idBioclim0k.LGM5, ])
+			eval.Bioclim0k.LGM10[,i] <- c(eBioclim0k.LGM10@t[idBioclim0k.LGM10], eBioclim0k.LGM10@auc, (eBioclim0k.LGM10@TPR[idBioclim0k.LGM10]+eBioclim0k.LGM10@TNR[idBioclim0k.LGM10]-1), eBioclim0k.LGM10@TPR[idBioclim0k.LGM10], eBioclim0k.LGM10@TNR[idBioclim0k.LGM10], eBioclim0k.LGM10@confusion[idBioclim0k.LGM10, ])
+			eval.Bioclim0k.LGM20[,i] <- c(eBioclim0k.LGM20@t[idBioclim0k.LGM20], eBioclim0k.LGM20@auc, (eBioclim0k.LGM20@TPR[idBioclim0k.LGM20]+eBioclim0k.LGM20@TNR[idBioclim0k.LGM20]-1), eBioclim0k.LGM20@TPR[idBioclim0k.LGM20], eBioclim0k.LGM20@TNR[idBioclim0k.LGM20], eBioclim0k.LGM20@confusion[idBioclim0k.LGM20, ])
+			
+			eval.Bioclim.overlap[,i] <- c(eBioclim.overlap@t[idBioclim.overlap], eBioclim.overlap@auc, (eBioclim.overlap@TPR[idBioclim.overlap]+eBioclim.overlap@TNR[idBioclim.overlap]-1), eBioclim.overlap@TPR[idBioclim.overlap], eBioclim.overlap@TNR[idBioclim.overlap], eBioclim.overlap@confusion[idBioclim.overlap, ])
+			eval.Bioclim.overlapLGM5[,i] <- c(eBioclim.overlapLGM5@t[idBioclim.overlapLGM5], eBioclim.overlapLGM5@auc, (eBioclim.overlapLGM5@TPR[idBioclim.overlapLGM5]+eBioclim.overlapLGM5@TNR[idBioclim.overlapLGM5]-1), eBioclim.overlapLGM5@TPR[idBioclim.overlapLGM5], eBioclim.overlapLGM5@TNR[idBioclim.overlapLGM5], eBioclim.overlapLGM5@confusion[idBioclim.overlapLGM5, ])
+			eval.Bioclim.overlapLGM10[,i] <- c(eBioclim.overlapLGM10@t[idBioclim.overlapLGM10], eBioclim.overlapLGM10@auc, (eBioclim.overlapLGM10@TPR[idBioclim.overlapLGM10]+eBioclim.overlapLGM10@TNR[idBioclim.overlapLGM10]-1), eBioclim.overlapLGM10@TPR[idBioclim.overlapLGM10], eBioclim.overlapLGM10@TNR[idBioclim.overlapLGM10], eBioclim.overlapLGM10@confusion[idBioclim.overlapLGM10, ])
+			eval.Bioclim.overlapLGM20[,i] <- c(eBioclim.overlapLGM20@t[idBioclim.overlapLGM20], eBioclim.overlapLGM20@auc, (eBioclim.overlapLGM20@TPR[idBioclim.overlapLGM20]+eBioclim.overlapLGM20@TNR[idBioclim.overlapLGM20]-1), eBioclim.overlapLGM20@TPR[idBioclim.overlapLGM20], eBioclim.overlapLGM20@TNR[idBioclim.overlapLGM20], eBioclim.overlapLGM20@confusion[idBioclim.overlapLGM20, ])
+
+			
+			
+
+							
+		
+						
+##Gower	
+	#fitting models - Gower 
+		Gower0k <- domain(train0k[which(train0k[,1]==1), -1])
+		Gower0k.LGM5 <- domain(train0k.LGM5[which(train0k.LGM5[,1]==1), -1])
+		Gower0k.LGM10 <- domain(train0k.LGM10[which(train0k.LGM10[,1]==1), -1])
+		Gower0k.LGM20 <- domain(train0k.LGM20[which(train0k.LGM20[,1]==1), -1])
+
+		Gower.overlap <- domain(train.overlap[which(train.overlap[,1]==1), -1])
+		Gower.overlapLGM5 <- domain(train.overlapLGM5[which(train.overlapLGM5[,1]==1), -1])
+		Gower.overlapLGM10 <- domain(train.overlapLGM10[which(train.overlapLGM10[,1]==1), -1])
+		Gower.overlapLGM20 <- domain(train.overlapLGM20[which(train.overlapLGM20[,1]==1), -1])
+
+
+		#saving suitabilities - Gower 
+			#current scenario
+			PRESsuit.Gower0k[,i] <- values(predict(env.stack.0k, Gower0k))
+			PRESsuit.Gower0k.LGM5[,i] <- values(predict(env.stack.0k, Gower0k.LGM5))
+			PRESsuit.Gower0k.LGM10[,i] <- values(predict(env.stack.0k, Gower0k.LGM10))
+			PRESsuit.Gower0k.LGM20[,i] <- values(predict(env.stack.0k, Gower0k.LGM20))
+
+			PRESsuit.Gower.overlap[,i] <- values(predict(env.stack.0k, Gower.overlap))
+			PRESsuit.Gower.overlapLGM5[,i] <- values(predict(env.stack.0k, Gower.overlapLGM5))
+			PRESsuit.Gower.overlapLGM10[,i] <- values(predict(env.stack.0k, Gower.overlapLGM10))
+			PRESsuit.Gower.overlapLGM20[,i] <- values(predict(env.stack.0k, Gower.overlapLGM20))		
+
+			#LGM scenario
+			LGMsuit.Gower0k[,i] <- values(predict(env.stack.21k, Gower0k))
+			LGMsuit.Gower0k.LGM5[,i] <- values(predict(env.stack.21k, Gower0k.LGM5))
+			LGMsuit.Gower0k.LGM10[,i] <- values(predict(env.stack.21k, Gower0k.LGM10))
+			LGMsuit.Gower0k.LGM20[,i] <- values(predict(env.stack.21k, Gower0k.LGM20))
+
+			LGMsuit.Gower.overlap[,i] <- values(predict(env.stack.21k, Gower.overlap))
+			LGMsuit.Gower.overlapLGM5[,i] <- values(predict(env.stack.21k, Gower.overlapLGM5))
+			LGMsuit.Gower.overlapLGM10[,i] <- values(predict(env.stack.21k, Gower.overlapLGM10))
+			LGMsuit.Gower.overlapLGM20[,i] <- values(predict(env.stack.21k, Gower.overlapLGM20))
+
+			#Future scenario
+			FUTsuit.Gower0k[,i] <- values(predict(env.stack.rcp45, Gower0k))
+			FUTsuit.Gower0k.LGM5[,i] <- values(predict(env.stack.rcp45, Gower0k.LGM5))
+			FUTsuit.Gower0k.LGM10[,i] <- values(predict(env.stack.rcp45, Gower0k.LGM10))
+			FUTsuit.Gower0k.LGM20[,i] <- values(predict(env.stack.rcp45, Gower0k.LGM20))
+
+			FUTsuit.Gower.overlap[,i] <- values(predict(env.stack.rcp45, Gower.overlap))
+			FUTsuit.Gower.overlapLGM5[,i] <- values(predict(env.stack.rcp45, Gower.overlapLGM5))
+			FUTsuit.Gower.overlapLGM10[,i] <- values(predict(env.stack.rcp45, Gower.overlapLGM10))
+			FUTsuit.Gower.overlapLGM20[,i] <- values(predict(env.stack.rcp45, Gower.overlapLGM20))
+						
+		
+	#evaluating models - Gower 	
+		eGower0k <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Gower0k)
+		eGower0k.LGM5 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Gower0k.LGM5)
+		eGower0k.LGM10 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Gower0k.LGM10)
+		eGower0k.LGM20 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Gower0k.LGM20)
+
+		eGower.overlap <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Gower.overlap)
+		eGower.overlapLGM5 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Gower.overlapLGM5)
+		eGower.overlapLGM10 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Gower.overlapLGM10)
+		eGower.overlapLGM20 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Gower.overlapLGM20)
+		
+		#saving statistics of evaluation - Gower 
+			#finding IDs for "threshold= max(Spec+Sens)"
+			idGower0k <- which(eGower0k@t == as.numeric(threshold(eGower0k, 'spec_sens')))
+			idGower0k.LGM5 <- which(eGower0k.LGM5@t == as.numeric(threshold(eGower0k.LGM5, 'spec_sens')))
+			idGower0k.LGM10 <- which(eGower0k.LGM10@t == as.numeric(threshold(eGower0k.LGM10, 'spec_sens')))
+			idGower0k.LGM20 <- which(eGower0k.LGM20@t == as.numeric(threshold(eGower0k.LGM20, 'spec_sens')))
+
+			idGower.overlap <- which(eGower.overlap@t == as.numeric(threshold(eGower.overlap, 'spec_sens')))
+			idGower.overlapLGM5 <- which(eGower.overlapLGM5@t == as.numeric(threshold(eGower.overlapLGM5, 'spec_sens')))
+			idGower.overlapLGM10 <- which(eGower.overlapLGM10@t == as.numeric(threshold(eGower.overlapLGM10, 'spec_sens')))
+			idGower.overlapLGM20 <- which(eGower.overlapLGM20@t == as.numeric(threshold(eGower.overlapLGM20, 'spec_sens')))
+				
+			
+			#saving on files 'eval.' - Gower 
+			eval.Gower0k[,i] <- c(eGower0k@t[idGower0k], eGower0k@auc, (eGower0k@TPR[idGower0k]+eGower0k@TNR[idGower0k]-1), eGower0k@TPR[idGower0k], eGower0k@TNR[idGower0k], eGower0k@confusion[idGower0k, ])
+			eval.Gower0k.LGM5[,i] <- c(eGower0k.LGM5@t[idGower0k.LGM5], eGower0k.LGM5@auc, (eGower0k.LGM5@TPR[idGower0k.LGM5]+eGower0k.LGM5@TNR[idGower0k.LGM5]-1), eGower0k.LGM5@TPR[idGower0k.LGM5], eGower0k.LGM5@TNR[idGower0k.LGM5], eGower0k.LGM5@confusion[idGower0k.LGM5, ])
+			eval.Gower0k.LGM10[,i] <- c(eGower0k.LGM10@t[idGower0k.LGM10], eGower0k.LGM10@auc, (eGower0k.LGM10@TPR[idGower0k.LGM10]+eGower0k.LGM10@TNR[idGower0k.LGM10]-1), eGower0k.LGM10@TPR[idGower0k.LGM10], eGower0k.LGM10@TNR[idGower0k.LGM10], eGower0k.LGM10@confusion[idGower0k.LGM10, ])
+			eval.Gower0k.LGM20[,i] <- c(eGower0k.LGM20@t[idGower0k.LGM20], eGower0k.LGM20@auc, (eGower0k.LGM20@TPR[idGower0k.LGM20]+eGower0k.LGM20@TNR[idGower0k.LGM20]-1), eGower0k.LGM20@TPR[idGower0k.LGM20], eGower0k.LGM20@TNR[idGower0k.LGM20], eGower0k.LGM20@confusion[idGower0k.LGM20, ])
+			
+			eval.Gower.overlap[,i] <- c(eGower.overlap@t[idGower.overlap], eGower.overlap@auc, (eGower.overlap@TPR[idGower.overlap]+eGower.overlap@TNR[idGower.overlap]-1), eGower.overlap@TPR[idGower.overlap], eGower.overlap@TNR[idGower.overlap], eGower.overlap@confusion[idGower.overlap, ])
+			eval.Gower.overlapLGM5[,i] <- c(eGower.overlapLGM5@t[idGower.overlapLGM5], eGower.overlapLGM5@auc, (eGower.overlapLGM5@TPR[idGower.overlapLGM5]+eGower.overlapLGM5@TNR[idGower.overlapLGM5]-1), eGower.overlapLGM5@TPR[idGower.overlapLGM5], eGower.overlapLGM5@TNR[idGower.overlapLGM5], eGower.overlapLGM5@confusion[idGower.overlapLGM5, ])
+			eval.Gower.overlapLGM10[,i] <- c(eGower.overlapLGM10@t[idGower.overlapLGM10], eGower.overlapLGM10@auc, (eGower.overlapLGM10@TPR[idGower.overlapLGM10]+eGower.overlapLGM10@TNR[idGower.overlapLGM10]-1), eGower.overlapLGM10@TPR[idGower.overlapLGM10], eGower.overlapLGM10@TNR[idGower.overlapLGM10], eGower.overlapLGM10@confusion[idGower.overlapLGM10, ])
+			eval.Gower.overlapLGM20[,i] <- c(eGower.overlapLGM20@t[idGower.overlapLGM20], eGower.overlapLGM20@auc, (eGower.overlapLGM20@TPR[idGower.overlapLGM20]+eGower.overlapLGM20@TNR[idGower.overlapLGM20]-1), eGower.overlapLGM20@TPR[idGower.overlapLGM20], eGower.overlapLGM20@TNR[idGower.overlapLGM20], eGower.overlapLGM20@confusion[idGower.overlapLGM20, ])
+
+			
+	
+
+
+
+#Mahalanobis - Maha	
+	#fitting models - Maha 
+		Maha0k <- mahal(train0k[which(train0k[,1]==1), -1])
+		Maha0k.LGM5 <- mahal(train0k.LGM5[which(train0k.LGM5[,1]==1), -1])
+		Maha0k.LGM10 <- mahal(train0k.LGM10[which(train0k.LGM10[,1]==1), -1])
+		Maha0k.LGM20 <- mahal(train0k.LGM20[which(train0k.LGM20[,1]==1), -1])
+
+		Maha.overlap <- mahal(train.overlap[which(train.overlap[,1]==1), -1])
+		Maha.overlapLGM5 <- mahal(train.overlapLGM5[which(train.overlapLGM5[,1]==1), -1])
+		Maha.overlapLGM10 <- mahal(train.overlapLGM10[which(train.overlapLGM10[,1]==1), -1])
+		Maha.overlapLGM20 <- mahal(train.overlapLGM20[which(train.overlapLGM20[,1]==1), -1])
+
+
+		#saving suitabilities - Maha 
+			#current scenario
+			PRESsuit.Maha0k[,i] <- values(predict(env.stack.0k, Maha0k))
+			PRESsuit.Maha0k.LGM5[,i] <- values(predict(env.stack.0k, Maha0k.LGM5))
+			PRESsuit.Maha0k.LGM10[,i] <- values(predict(env.stack.0k, Maha0k.LGM10))
+			PRESsuit.Maha0k.LGM20[,i] <- values(predict(env.stack.0k, Maha0k.LGM20))
+
+			PRESsuit.Maha.overlap[,i] <- values(predict(env.stack.0k, Maha.overlap))
+			PRESsuit.Maha.overlapLGM5[,i] <- values(predict(env.stack.0k, Maha.overlapLGM5))
+			PRESsuit.Maha.overlapLGM10[,i] <- values(predict(env.stack.0k, Maha.overlapLGM10))
+			PRESsuit.Maha.overlapLGM20[,i] <- values(predict(env.stack.0k, Maha.overlapLGM20))		
+
+			#LGM scenario
+			LGMsuit.Maha0k[,i] <- values(predict(env.stack.21k, Maha0k))
+			LGMsuit.Maha0k.LGM5[,i] <- values(predict(env.stack.21k, Maha0k.LGM5))
+			LGMsuit.Maha0k.LGM10[,i] <- values(predict(env.stack.21k, Maha0k.LGM10))
+			LGMsuit.Maha0k.LGM20[,i] <- values(predict(env.stack.21k, Maha0k.LGM20))
+
+			LGMsuit.Maha.overlap[,i] <- values(predict(env.stack.21k, Maha.overlap))
+			LGMsuit.Maha.overlapLGM5[,i] <- values(predict(env.stack.21k, Maha.overlapLGM5))
+			LGMsuit.Maha.overlapLGM10[,i] <- values(predict(env.stack.21k, Maha.overlapLGM10))
+			LGMsuit.Maha.overlapLGM20[,i] <- values(predict(env.stack.21k, Maha.overlapLGM20))
+
+			#Future scenario
+			FUTsuit.Maha0k[,i] <- values(predict(env.stack.rcp45, Maha0k))
+			FUTsuit.Maha0k.LGM5[,i] <- values(predict(env.stack.rcp45, Maha0k.LGM5))
+			FUTsuit.Maha0k.LGM10[,i] <- values(predict(env.stack.rcp45, Maha0k.LGM10))
+			FUTsuit.Maha0k.LGM20[,i] <- values(predict(env.stack.rcp45, Maha0k.LGM20))
+
+			FUTsuit.Maha.overlap[,i] <- values(predict(env.stack.rcp45, Maha.overlap))
+			FUTsuit.Maha.overlapLGM5[,i] <- values(predict(env.stack.rcp45, Maha.overlapLGM5))
+			FUTsuit.Maha.overlapLGM10[,i] <- values(predict(env.stack.rcp45, Maha.overlapLGM10))
+			FUTsuit.Maha.overlapLGM20[,i] <- values(predict(env.stack.rcp45, Maha.overlapLGM20))
+				
+		
+	#evaluating models - Maha 	
+		eMaha0k <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Maha0k)
+		eMaha0k.LGM5 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Maha0k.LGM5)
+		eMaha0k.LGM10 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Maha0k.LGM10)
+		eMaha0k.LGM20 <- evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= Maha0k.LGM20)
+
+		eMaha.overlap <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Maha.overlap)
+		eMaha.overlapLGM5 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Maha.overlapLGM5)
+		eMaha.overlapLGM10 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Maha.overlapLGM10)
+		eMaha.overlapLGM20 <- evaluate(p= test.overlap[test.overlap[,1]==1, -1], a= test.overlap[test.overlap[,1]==0, -1], model= Maha.overlapLGM20)
+		
+		#saving statistics of evaluation - Maha 
+			#finding IDs for "threshold= max(Spec+Sens)"
+			idMaha0k <- which(eMaha0k@t == as.numeric(threshold(eMaha0k, 'spec_sens')))
+			idMaha0k.LGM5 <- which(eMaha0k.LGM5@t == as.numeric(threshold(eMaha0k.LGM5, 'spec_sens')))
+			idMaha0k.LGM10 <- which(eMaha0k.LGM10@t == as.numeric(threshold(eMaha0k.LGM10, 'spec_sens')))
+			idMaha0k.LGM20 <- which(eMaha0k.LGM20@t == as.numeric(threshold(eMaha0k.LGM20, 'spec_sens')))
+
+			idMaha.overlap <- which(eMaha.overlap@t == as.numeric(threshold(eMaha.overlap, 'spec_sens')))
+			idMaha.overlapLGM5 <- which(eMaha.overlapLGM5@t == as.numeric(threshold(eMaha.overlapLGM5, 'spec_sens')))
+			idMaha.overlapLGM10 <- which(eMaha.overlapLGM10@t == as.numeric(threshold(eMaha.overlapLGM10, 'spec_sens')))
+			idMaha.overlapLGM20 <- which(eMaha.overlapLGM20@t == as.numeric(threshold(eMaha.overlapLGM20, 'spec_sens')))
+			
+			
+			#saving on files 'eval.' - Maha 
+			eval.Maha0k[,i] <- c(eMaha0k@t[idMaha0k], eMaha0k@auc, (eMaha0k@TPR[idMaha0k]+eMaha0k@TNR[idMaha0k]-1), eMaha0k@TPR[idMaha0k], eMaha0k@TNR[idMaha0k], eMaha0k@confusion[idMaha0k, ])
+			eval.Maha0k.LGM5[,i] <- c(eMaha0k.LGM5@t[idMaha0k.LGM5], eMaha0k.LGM5@auc, (eMaha0k.LGM5@TPR[idMaha0k.LGM5]+eMaha0k.LGM5@TNR[idMaha0k.LGM5]-1), eMaha0k.LGM5@TPR[idMaha0k.LGM5], eMaha0k.LGM5@TNR[idMaha0k.LGM5], eMaha0k.LGM5@confusion[idMaha0k.LGM5, ])
+			eval.Maha0k.LGM10[,i] <- c(eMaha0k.LGM10@t[idMaha0k.LGM10], eMaha0k.LGM10@auc, (eMaha0k.LGM10@TPR[idMaha0k.LGM10]+eMaha0k.LGM10@TNR[idMaha0k.LGM10]-1), eMaha0k.LGM10@TPR[idMaha0k.LGM10], eMaha0k.LGM10@TNR[idMaha0k.LGM10], eMaha0k.LGM10@confusion[idMaha0k.LGM10, ])
+			eval.Maha0k.LGM20[,i] <- c(eMaha0k.LGM20@t[idMaha0k.LGM20], eMaha0k.LGM20@auc, (eMaha0k.LGM20@TPR[idMaha0k.LGM20]+eMaha0k.LGM20@TNR[idMaha0k.LGM20]-1), eMaha0k.LGM20@TPR[idMaha0k.LGM20], eMaha0k.LGM20@TNR[idMaha0k.LGM20], eMaha0k.LGM20@confusion[idMaha0k.LGM20, ])
+			
+			eval.Maha.overlap[,i] <- c(eMaha.overlap@t[idMaha.overlap], eMaha.overlap@auc, (eMaha.overlap@TPR[idMaha.overlap]+eMaha.overlap@TNR[idMaha.overlap]-1), eMaha.overlap@TPR[idMaha.overlap], eMaha.overlap@TNR[idMaha.overlap], eMaha.overlap@confusion[idMaha.overlap, ])
+			eval.Maha.overlapLGM5[,i] <- c(eMaha.overlapLGM5@t[idMaha.overlapLGM5], eMaha.overlapLGM5@auc, (eMaha.overlapLGM5@TPR[idMaha.overlapLGM5]+eMaha.overlapLGM5@TNR[idMaha.overlapLGM5]-1), eMaha.overlapLGM5@TPR[idMaha.overlapLGM5], eMaha.overlapLGM5@TNR[idMaha.overlapLGM5], eMaha.overlapLGM5@confusion[idMaha.overlapLGM5, ])
+			eval.Maha.overlapLGM10[,i] <- c(eMaha.overlapLGM10@t[idMaha.overlapLGM10], eMaha.overlapLGM10@auc, (eMaha.overlapLGM10@TPR[idMaha.overlapLGM10]+eMaha.overlapLGM10@TNR[idMaha.overlapLGM10]-1), eMaha.overlapLGM10@TPR[idMaha.overlapLGM10], eMaha.overlapLGM10@TNR[idMaha.overlapLGM10], eMaha.overlapLGM10@confusion[idMaha.overlapLGM10, ])
+			eval.Maha.overlapLGM20[,i] <- c(eMaha.overlapLGM20@t[idMaha.overlapLGM20], eMaha.overlapLGM20@auc, (eMaha.overlapLGM20@TPR[idMaha.overlapLGM20]+eMaha.overlapLGM20@TNR[idMaha.overlapLGM20]-1), eMaha.overlapLGM20@TPR[idMaha.overlapLGM20], eMaha.overlapLGM20@TNR[idMaha.overlapLGM20], eMaha.overlapLGM20@confusion[idMaha.overlapLGM20, ])
+
+			
+
+
+#GLM			
+teste <- glm(pb ~ bio5+bio6+bio12, data= train0k, family= binomial(link='logit'))
+evaluate(p= test0k[test0k[,1]==1, -1], a= test0k[test0k[,1]==0, -1], model= teste)
+pred <- predict(env.stack.0k, teste)
+		
+
+}#end for'i'
+
+
+
+
+
+
