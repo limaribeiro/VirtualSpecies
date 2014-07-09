@@ -1,0 +1,137 @@
+rm(list=ls())
+
+library('raster')
+##loading the climate layers
+setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/climate/Europe')
+env.stack.0k <- stack("Europe_0k_bio5.grd", "Europe_0k_bio6.grd", "Europe_0k_bio12.grd"); names(env.stack.0k) <- c('bio5', 'bio6', 'bio12')
+env.stack.21k <- stack("Europe_21k_bio5.grd", "Europe_21k_bio6.grd", "Europe_21k_bio12.grd"); names(env.stack.21k) <- c('bio5', 'bio6', 'bio12')
+env.stack.rcp45 <- stack("Europe_rcp45_bio5.grd", "Europe_rcp45_bio6.grd", "Europe_rcp45_bio12.grd"); names(env.stack.rcp45) <- c('bio5', 'bio6', 'bio12')
+
+
+##creating virtual species
+library('sdmvspecies')
+
+#sp1 - warm/dry - arid
+config.sp1 <- list(c("bio5", 40, 20), c("bio6", 0, 10), c("bio12", 100, 100))
+sp1.0k <- artificialBellResponse(env.stack.0k, config.sp1)
+sp1.21k <- artificialBellResponse(env.stack.21k, config.sp1)
+sp1.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp1)
+
+plot(stack(sp1.0k, sp1.21k, sp1.rcp45), main= 'sp1')
+threshold <- 0.5
+sp1 <- stack(sp1.0k > threshold, sp1.21k > threshold, sp1.rcp45 > threshold, sp1.0k > threshold & sp1.21k > threshold)
+names(sp1) <- c("sp1 (Pres)", "sp1 (LGM)", "sp1 (Fut)", "sp1 (overlay Pes/LGM)")
+plot(sp1)
+length(which(values(sp1.0k) > threshold)); length(which(values(sp1.21k) > threshold)); length(which(values(sp1.rcp45) > threshold))
+
+
+#sp2 - ~warm/~wet - temperate/warm
+config.sp2 <- list(c("bio5", 15, 10), c("bio6", 0, 10), c("bio12", 800, 500))
+sp2.0k <- artificialBellResponse(env.stack.0k, config.sp2)
+sp2.21k <- artificialBellResponse(env.stack.21k, config.sp2)
+sp2.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp2)
+
+plot(stack(sp2.0k, sp2.21k, sp2.rcp45), main= 'sp2')
+threshold <- 0.5
+sp2 <- stack(sp2.0k > threshold, sp2.21k > threshold, sp2.rcp45 > threshold, sp2.0k > threshold & sp2.21k > threshold)
+names(sp2) <- c("sp2 (Pres)", "sp2 (LGM)", "sp2 (Fut)", "sp2 (overlay Pes/LGM)")
+plot(sp2)
+length(which(values(sp2.0k) > threshold)); length(which(values(sp2.21k) > threshold)); length(which(values(sp2.rcp45) > threshold))
+
+
+#sp3 - cool/wet - temperate/cold
+config.sp3 <- list(c("bio5", 10, 15), c("bio6", -10, 15), c("bio12", 1000, 500))
+sp3.0k <- artificialBellResponse(env.stack.0k, config.sp3)
+sp3.21k <- artificialBellResponse(env.stack.21k, config.sp3)
+sp3.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp3)
+
+plot(stack(sp3.0k, sp3.21k, sp3.rcp45), main= 'sp3')
+threshold <- 0.5
+sp3 <- stack(sp3.0k > threshold, sp3.21k > threshold, sp3.rcp45 > threshold, sp3.0k > threshold & sp3.21k > threshold)
+names(sp3) <- c("sp3 (Pres)", "sp3 (LGM)", "sp3 (Fut)", "sp3 (overlay Pes/LGM)")
+plot(sp3)
+length(which(values(sp3.0k) > threshold)); length(which(values(sp3.21k) > threshold)); length(which(values(sp3.rcp45) > threshold))
+
+plot(stack(sp3.0k & sp3.21k > threshold))
+
+
+#sp4 - hot-dry summer/cool-wet winner - mediterranean
+config.sp4 <- list(c("bio5", 35, 15), c("bio6", 5, 15), c("bio12", 500, 200))
+sp4.0k <- artificialBellResponse(env.stack.0k, config.sp4)
+sp4.21k <- artificialBellResponse(env.stack.21k, config.sp4)
+sp4.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp4)
+
+plot(stack(sp4.0k, sp4.21k, sp4.rcp45), main= 'sp4')
+threshold <- 0.5
+sp4 <- stack(sp4.0k > threshold, sp4.21k > threshold, sp4.rcp45 > threshold, sp4.0k > threshold & sp4.21k > threshold)
+names(sp4) <- c("sp4 (Pres)", "sp4 (LGM)", "sp4 (Fut)", "sp4 (overlay Pes/LGM)")
+plot(sp4)
+length(which(values(sp4.0k) > threshold)); length(which(values(sp4.21k) > threshold)); length(which(values(sp4.rcp45) > threshold))
+
+
+
+#sp5 - general
+config.sp5 <- list(c("bio5", 20, 20), c("bio6", -20, 30), c("bio12", 700, 500))
+
+
+sp5.0k <- artificialBellResponse(env.stack.0k, config.sp5)
+sp5.21k <- artificialBellResponse(env.stack.21k, config.sp5)
+sp5.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp5)
+
+plot(stack(sp5.0k, sp5.21k, sp5.rcp45), main= 'sp5')
+threshold <- 0.5
+sp5 <- stack(sp5.0k > threshold, sp5.21k > threshold, sp5.rcp45 > threshold, sp5.0k > threshold & sp5.21k > threshold)
+#names(sp5) <- c("sp5 (Pres)", "sp5 (LGM)", "sp5 (Fut)", "sp5 (overlay Pes/LGM)")
+plot(sp5, main= c("sp5 (Pres)", "sp5 (LGM)", "sp5 (Fut)", "sp5 (overlap Pes/LGM)"))
+#length(which(values(sp5.0k) > threshold)); length(which(values(sp5.21k) > threshold)); length(which(values(sp5.rcp45) > threshold))
+
+
+
+##################################
+######################
+############
+
+#array of species across a gradient
+
+grad.bio5 <- c(10, 20, 30, 40)
+grad.bio6 <- c(-20, -10, 0, 10)
+grad.bio12 <- c(200, 500, 800, 1100)
+
+#threshold <- 0.5
+threshold <- 0.2
+
+tol <- c(15, 15, 500) #tolerance generalist
+#tol <- c(20, 20, 700) #tolerance specialist
+
+setwd('/Users/matheusribeiro/aaa_Matheus_Ribeiro-2014-05-25/Producao Cientifica/em andamento/fossil_conservacao_sppVirtuais/virtualSPP/Europe/tolerance_15_15_500/threshold_0.2')
+
+for(i in grad.bio5){
+	for(j in grad.bio6){
+		for(k in grad.bio12){
+			config.sp <- list(c("bio5", i, tol[1]), c("bio6", j, tol[2]), c("bio12", k, tol[3]))
+			sp.0k <- artificialBellResponse(env.stack.0k, config.sp)
+			sp.21k <- artificialBellResponse(env.stack.21k, config.sp)
+			sp.rcp45 <- artificialBellResponse(env.stack.rcp45, config.sp)
+						
+			pdf(paste(paste('virtualSuitability (', paste(i, j, k, sep= ' '), ')', sep=''), '.pdf', sep=''))
+			plot(stack(sp.0k, sp.21k, sp.rcp45), main= c("Pres", "LGM", "Fut"))
+			dev.off()
+			
+			pdf(paste(paste('virtualTHR (', paste(i, j, k, sep= ' '), ')', sep=''), '.pdf', sep=''))
+			sp <- stack(sp.0k > threshold, sp.21k > threshold, sp.rcp45 > threshold, sp.0k > threshold & sp.21k > threshold)
+			names(sp) <- c("Pres", "LGM", "Fut", "overlap (Pes/LGM)")
+			plot(sp, main= c("Pres", "LGM", "Fut", "overlap (Pes/LGM)"))
+			dev.off()
+			
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
